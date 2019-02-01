@@ -2,42 +2,44 @@ import numpy
 from datacleaner.base import BaseEstimator, TransformerMixin
 
 
-class Undesired:
-    """Define undesired entries.
+class EntrySelector:
+    """Define a set of entries given some condition.
 
-    The isna method returns a mask for undesired entries of an array.
+    The mask method returns a mask for undesired entries of an array.
     """
-    def __init__(self, na='NA'):
-        if callable(na):
-            self.na = na
+    def __init__(self, condition):
+        if callable(condition):
+            self.condition = condition
         else:
-            if isinstance(na, str):
-                self.na = set((na,))
+            if isinstance(condition, str):
+                self.condition = set((condition,))
             else:
                 try:
-                    self.na = set(na)
+                    self.condition = set(condition)
                 except TypeError:
-                    self.na = set((na,))
+                    self.condition = set((condition,))
 
-    def isna_from_condition(self, X):
-        return numpy.array([[self.na(x) for x in record] for record in X])
+    def mask_from_function(self, X):
+        return numpy.array(
+            [[self.condition(x) for x in record] for record in X])
 
-    def isna_from_set(self, X):
+    def mask_from_set(self, X):
         import functools
-        return functools.reduce(numpy.logical_or, [X == c for c in self.na])
+        return functools.reduce(
+            numpy.logical_or, [X == c for c in self.condition])
 
     @property
-    def isna(self):
-        if callable(self.na):
-            return self.isna_from_condition
+    def mask(self):
+        if callable(self.condition):
+            return self.mask_from_condition
         else:
-            return self.isna_from_set
+            return self.mask_from_set
 
 
-class Cleaner(BaseEstimator, TransformerMixin, Undesired):
+class Cleaner(BaseEstimator, TransformerMixin, EntrySelector):
     """Clean data. see StandardScaler"""
-    def __init__(self, na, thr=0.1):
-        super().__init__(na=na)
+    def __init__(self, na='NA', thr=0.1):
+        super().__init__(condition=na)
         self.thr = thr
 
     def fit(self, X, y=None):
@@ -54,7 +56,7 @@ class Cleaner(BaseEstimator, TransformerMixin, Undesired):
         n, p = X.shape
         records = list(range(n))
         fields = list(range(p))
-        mask = self.isna(X)
+        mask = self.mask(X)
 
         n1, p1 = n, p
         while 1:
@@ -68,7 +70,7 @@ class Cleaner(BaseEstimator, TransformerMixin, Undesired):
             nc = ng0[c]
 
             if nr <= p1 * self.thr and nc <= n1 * self.thr:
-                self.records, self.fields = records, fields
+                self.records_, self.fields_ = records, fields
                 return self
             else:
                 if len(records) % 100 == 0:
