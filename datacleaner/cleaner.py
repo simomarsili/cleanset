@@ -49,7 +49,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
         Parameters
         ----------
-        X : array-like, sparse matrix, shape [n_samples, n_features]
+        X : array-like, shape [n_samples, n_features]
             The data used to compute the valid rows and columns.
         y
             Ignored
@@ -103,3 +103,34 @@ class Cleaner(BaseEstimator, TransformerMixin):
             return X[self.rows_][:, self.cols_]
         else:
             raise ValueError('This istance is Not fitted yet.')
+
+
+def filter(condition, X, *, thr=0.1, alpha=0.5):
+    """
+    Return indices of valid rows and columns.
+
+    Parameters
+    ----------
+    condition : callable or array
+        If callable, condition(x) is True if x is an invalid value.
+        If a 2D boolean array, a mask for invalid entries
+        (with shape identical to data).
+    X : array-like, shape [n_samples, n_features]
+        The data used to compute the valid rows and columns.
+    thr : tuple or int, optional
+        The desired ratio of invalid entries.
+        If a single integer, use the same value both for rows and columns.
+    alpha : float, optional
+        For 0.5 < alpha < 1, remove rows more easily than columns.
+        0 < alpha < 1.
+
+    Returns
+    -------
+    (rows, columns) : tuple of lists
+        Indices of rows and columns identifying a submatrix of data
+        for which the fraction of invalid entries is lower than the thresholds.
+
+    """
+    cleaner = Cleaner(condition, thr=thr, alpha=alpha)
+    cleaner.fit(X)
+    return cleaner.rows_, cleaner.cols_
