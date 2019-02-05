@@ -13,7 +13,10 @@ class Cleaner(BaseEstimator, TransformerMixin):
             # check if input is a mask array
             if numpy.unique(condition) == [0, 1]:
                 self.mask_ = condition
-        self.thr = thr
+        try:
+            self.record_thr, self.field_thr = thr
+        except TypeError:
+            self.record_thr, self.field_thr = (thr, thr)
         self.records_ = None
         self.fields_ = None
         self.alpha = alpha
@@ -49,16 +52,18 @@ class Cleaner(BaseEstimator, TransformerMixin):
             r = numpy.argmax(ng1)  # index of most gappy row
             c = numpy.argmax(ng0)  # index of most gappy column
 
-            nr = ng1[r]
-            nc = ng0[c]
+            nr = ng1[r]  # of gaps in the most gappy row
+            nc = ng0[c]  # of gaps in the most gappy column
 
-            if nr <= p1 * self.thr and nc <= n1 * self.thr:
+            if nr <= p1 * self.record_thr and nc <= n1 * self.field_thr:
                 self.records_, self.fields_ = records, fields
+                print('final: ', len(records), n1, p1, nr/p1, nc/n1)
                 return self
             else:
                 if len(records) % 1 == 0:
                     print(len(records), n1, p1, nr/p1, nc/n1)
-            if (1 - self.alpha) * nc / n1 > self.alpha * nr / p1:
+            if (1 - self.alpha) * (nc / n1) / self.field_thr > (
+                    self.alpha * (nr / p1) / self.record_thr):
                 # remove a column
                 p1 -= 1
                 fields.remove(c)
