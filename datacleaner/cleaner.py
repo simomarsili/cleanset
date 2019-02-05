@@ -2,47 +2,25 @@ import numpy
 from datacleaner.base import BaseEstimator, TransformerMixin
 
 
-class EntrySelector:
-    """Define a set of entries given some condition.
-
-    The mask method returns a mask for undesired entries of an array.
-    """
-    def __init__(self, condition):
+class Cleaner(BaseEstimator, TransformerMixin):
+    """Clean data. see StandardScaler"""
+    def __init__(self, condition, thr=0.1):
+        self.condition = None
+        self.mask_ = None
         if callable(condition):
             self.condition = condition
-        else:
-            if isinstance(condition, str):
-                self.condition = set((condition,))
-            else:
-                try:
-                    self.condition = set(condition)
-                except TypeError:
-                    self.condition = set((condition,))
-
-    def mask_from_function(self, X):
-        return numpy.array(
-            [[self.condition(x) for x in record] for record in X])
-
-    def mask_from_set(self, X):
-        import functools
-        return functools.reduce(
-            numpy.logical_or, [X == c for c in self.condition])
-
-    @property
-    def mask(self):
-        if callable(self.condition):
-            return self.mask_from_condition
-        else:
-            return self.mask_from_set
-
-
-class Cleaner(BaseEstimator, TransformerMixin, EntrySelector):
-    """Clean data. see StandardScaler"""
-    def __init__(self, na='NA', thr=0.1):
-        super().__init__(condition=na)
+        elif hasattr(condition, 'ndim'):
+            # check if input is a mask array
+            if numpy.unique(condition) == [0, 1]:
+                self.mask_ = condition
         self.thr = thr
         self.records_ = None
         self.fields_ = None
+
+    @staticmethod
+    def mask_from(condition, X):
+        return numpy.array(
+            [[condition(x) for x in record] for record in X])
 
     def fit(self, X, y=None):
         """Compute the mean and std to be used for later scaling.
@@ -58,7 +36,9 @@ class Cleaner(BaseEstimator, TransformerMixin, EntrySelector):
         n, p = X.shape
         records = list(range(n))
         fields = list(range(p))
-        mask = self.mask(X)
+        if self.mask_ is None:
+            mask = self.mask_from(self.condition, X)
+        self.mask_ = mask
 
         n1, p1 = n, p
         ng0 = mask.sum(axis=0)  # p-dimensional (columns)
@@ -75,7 +55,7 @@ class Cleaner(BaseEstimator, TransformerMixin, EntrySelector):
                 self.records_, self.fields_ = records, fields
                 return self
             else:
-                if len(records) % 100 == 0:
+                if len(records) % 1 == 0:
                     print(len(records), n1, p1, nr/p1, nc/n1)
             if nc/n1 > nr/p1:
                 # remove a column
