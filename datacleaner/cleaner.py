@@ -4,7 +4,7 @@ from datacleaner.base import BaseEstimator, TransformerMixin
 
 class Cleaner(BaseEstimator, TransformerMixin):
     """Clean data. see StandardScaler"""
-    def __init__(self, condition, thr=0.1):
+    def __init__(self, condition, thr=0.1, alpha=0.5):
         self.condition = None
         self.mask_ = None
         if callable(condition):
@@ -16,6 +16,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
         self.thr = thr
         self.records_ = None
         self.fields_ = None
+        self.alpha = alpha
 
     @staticmethod
     def mask_from(condition, X):
@@ -57,7 +58,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
             else:
                 if len(records) % 1 == 0:
                     print(len(records), n1, p1, nr/p1, nc/n1)
-            if nc/n1 > nr/p1:
+            if (1 - self.alpha) * nc / n1 > self.alpha * nr / p1:
                 # remove a column
                 p1 -= 1
                 fields.remove(c)
