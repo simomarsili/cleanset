@@ -3,43 +3,61 @@ from datacleaner.base import BaseEstimator, TransformerMixin
 
 
 class Cleaner(BaseEstimator, TransformerMixin):
-    """Clean data. see StandardScaler"""
+    """Cleaner class.
+
+    Parameters
+    ----------
+    condition : callable or array
+        If callable, condition(x) is True if x is an invalid value.
+        If a 2D boolean array, a mask for invalid entries
+        (with shape identical to data).
+    thr : tuple or int, optional
+        The desired ratio of invalid entries.
+        If a single integer, use the same value both for rows and columns.
+    alpha : float, optional
+        For 0.5 < alpha < 1, remove rows more easily than columns.
+        0 < alpha < 1.
+
+    """
+
     def __init__(self, condition, thr=0.1, alpha=0.5):
         self.condition = None
         self.mask_ = None
+        self.rows_ = None
+        self.cols_ = None
         if callable(condition):
             self.condition = condition
         elif hasattr(condition, 'ndim'):
-            # check if input is a mask array
             if numpy.unique(condition) == [0, 1]:
                 self.mask_ = condition
         try:
-            self.record_thr, self.field_thr = thr
+            self.row_thr, self.col_thr = thr
         except TypeError:
-            self.record_thr, self.field_thr = (thr, thr)
-        self.records_ = None
-        self.fields_ = None
-        self.alpha = alpha
+            self.row_thr, self.col_thr = (thr, thr)
+        if 0 < alpha < 1:
+            self.alpha = alpha
+        else:
+            raise ValueError('alpha must be in the [0,1] range')
 
     @staticmethod
     def mask_from(condition, X):
         return numpy.array(
-            [[condition(x) for x in record] for record in X])
+            [[condition(x) for x in row] for row in X])
 
     def fit(self, X, y=None):
-        """Compute the mean and std to be used for later scaling.
+        """Compute the subset of valid rows and columns.
+
         Parameters
         ----------
-        X : {array-like, sparse matrix}, shape [n_samples, n_features]
-            The data used to compute the mean and standard deviation
-            used for later scaling along the features axis.
+        X : array-like, sparse matrix, shape [n_samples, n_features]
+            The data used to compute the valid rows and columns.
         y
             Ignored
         """
 
         n, p = X.shape
-        records = list(range(n))
-        fields = list(range(p))
+        rows = list(range(n))
+        cols = list(range(p))
         if self.mask_ is None:
             mask = self.mask_from(self.condition, X)
         self.mask_ = mask
@@ -55,18 +73,18 @@ class Cleaner(BaseEstimator, TransformerMixin):
             nr = ng1[r]  # of gaps in the most gappy row
             nc = ng0[c]  # of gaps in the most gappy column
 
-            if nr <= p1 * self.record_thr and nc <= n1 * self.field_thr:
-                self.records_, self.fields_ = records, fields
-                print('final: ', len(records), n1, p1, nr/p1, nc/n1)
+            if nr <= p1 * self.row_thr and nc <= n1 * self.col_thr:
+                self.rows_, self.cols_ = rows, cols
+                print('final: ', len(rows), n1, p1, nr/p1, nc/n1)
                 return self
             else:
-                if len(records) % 1 == 0:
-                    print(len(records), n1, p1, nr/p1, nc/n1)
-            if (1 - self.alpha) * (nc / n1) / self.field_thr > (
-                    self.alpha * (nr / p1) / self.record_thr):
+                if len(rows) % 1 == 0:
+                    print(len(rows), n1, p1, nr/p1, nc/n1)
+            if (1 - self.alpha) * (nc / n1) / self.col_thr > (
+                    self.alpha * (nr / p1) / self.row_thr):
                 # remove a column
                 p1 -= 1
-                fields.remove(c)
+                cols.remove(c)
                 ng0[c] = 0
                 ng1 -= mask[:, c]
                 mask[:, c] = False
@@ -74,14 +92,14 @@ class Cleaner(BaseEstimator, TransformerMixin):
             else:
                 n1 -= 1
                 # remve a row
-                records.remove(r)
+                rows.remove(r)
                 ng0 -= mask[r]
                 ng1[r] = 0
                 mask[r] = False
             # ali = numpy.delete(ali, rmax, axis=0)
 
     def transform(self, X):
-        if self.records_ is not None:
-            return X[self.records_][:, self.fields_]
+        if self.rows_ is not None:
+            return X[self.rows_][:, self.cols_]
         else:
             raise ValueError('This istance is Not fitted yet.')
