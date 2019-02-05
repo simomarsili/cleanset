@@ -9,4 +9,4 @@ __license__ = 'BSD 3 clause'
 __author__ = 'Simone Marsili (simo.marsili@gmail.com)'
 __all__ = []
 
-from datacleaner.cleaner import Cleaner
+from datacleaner.cleaner import Cleaner, clean

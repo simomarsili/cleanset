@@ -105,18 +105,18 @@ class Cleaner(BaseEstimator, TransformerMixin):
             raise ValueError('This istance is Not fitted yet.')
 
 
-def filter(condition, X, *, thr=0.1, alpha=0.5):
+def clean(X, condition, *, thr=0.1, alpha=0.5):
     """
-    Return indices of valid rows and columns.
+    Clean data from invalid entries.
 
     Parameters
     ----------
-    condition : callable or array
+    X : array-like, shape [n_samples, n_features]
+        The data used to compute the valid rows and columns.
+    condition : callable or array, optional
         If callable, condition(x) is True if x is an invalid value.
         If a 2D boolean array, a mask for invalid entries
         (with shape identical to data).
-    X : array-like, shape [n_samples, n_features]
-        The data used to compute the valid rows and columns.
     thr : tuple or int, optional
         The desired ratio of invalid entries.
         If a single integer, use the same value both for rows and columns.
