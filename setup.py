@@ -3,8 +3,8 @@ from os import path
 from setuptools import setup
 # from setuptools import find_packages
 
-NAME = 'datacleaner'
-PACKAGES = ['datacleaner']
+NAME = 'cleanset'
+PACKAGES = ['cleanset']
 MODULES = []
 VERSION_FILE = 'version.json'
 SETUP_REQUIRES = []

@@ -1,5 +1,5 @@
 import numpy
-from datacleaner.base import BaseEstimator, TransformerMixin
+from cleanset.base import BaseEstimator, TransformerMixin
 
 
 class Cleaner(BaseEstimator, TransformerMixin):
