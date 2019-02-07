@@ -60,8 +60,15 @@ class Cleaner(BaseEstimator, TransformerMixin):
         n, p = X.shape
         rows = list(range(n))
         cols = list(range(p))
+
+        # build the mask
         if self.mask_ is None:
-            self.mask_ = numpy.vectorize(self.condition)(X)
+            try:
+                # check if dataframe
+                self.mask_ = X.apply(
+                    self.condition, result_type='broadcast').values
+            except AttributeError:
+                self.mask_ = numpy.vectorize(self.condition)(X)
 
         n1, p1 = n, p  # # of filtered rows and columns
         self.col_ninvalid = self.mask_.sum(axis=0)  # p-dimensional (columns)
@@ -110,7 +117,10 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         if self.rows_ is not None:
-            return X[self.rows_][:, self.cols_]
+            try:
+                return X.iloc[:, self.cols_].iloc[self.rows_]
+            except AttributeError:
+                return X[self.rows_][:, self.cols_]
         else:
             raise ValueError('This istance is Not fitted yet.')
 
