@@ -20,13 +20,26 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
     """
 
-    def __init__(self, condition, thr=0.1, alpha=0.5):
+    def __init__(self, condition='isna', thr=0.1, alpha=0.5):
         self.condition = None
         self.mask_ = None
         self.rows_ = None
         self.cols_ = None
         self.col_ninvalid = None
         self.row_ninvalid = None
+        if condition == 'isna':
+            try:
+                import pandas
+            except ImportError:
+                # use numpy
+                def condition(x):
+                    try:
+                        return numpy.isnan(x)
+                    except TypeError:
+                        return False
+            else:
+                condition = pandas.isna
+
         if callable(condition):
             self.condition = condition
         elif hasattr(condition, 'ndim'):
@@ -86,11 +99,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
             if nr <= self.row_thr and nc <= self.col_thr:
                 self.rows_, self.cols_ = rows, cols
-                print('final: ', len(rows), n1, p1, nr, nc)
                 return self
-            else:
-                if len(rows) % 1 == 0:
-                    print(len(rows), n1, p1, nr, nc)
             if (1 - self.alpha) * nc / self.col_thr > (
                     self.alpha * nr / self.row_thr):
                 # remove a column
@@ -114,6 +123,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
                     rows.remove(r)
                     self.col_ninvalid -= self.mask_[r]
                     self.row_ninvalid[r] = 0
+            assert n1 > 0 and p1 > 0, 'This point should not be reached'
 
     def transform(self, X):
         if self.rows_ is not None:
