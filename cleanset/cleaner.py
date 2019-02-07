@@ -54,11 +54,6 @@ class Cleaner(BaseEstimator, TransformerMixin):
         else:
             raise ValueError('alpha must be in the [0,1] range')
 
-    @staticmethod
-    def mask_from(condition, X):
-        return numpy.array(
-            [[condition(x) for x in row] for row in X])
-
     def fit(self, X, y=None):
         """Compute the subset of valid rows and columns.
 
@@ -135,7 +130,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
             raise ValueError('This istance is Not fitted yet.')
 
 
-def clean(X, condition, *, thr=0.1, alpha=0.5):
+def clean(X, *, condition='isna', thr=0.1, alpha=0.5, return_clean_data=False):
     """
     Clean data from invalid entries.
 
@@ -147,6 +142,7 @@ def clean(X, condition, *, thr=0.1, alpha=0.5):
         If callable, condition(x) is True if x is an invalid value.
         If a 2D boolean array, a mask for invalid entries
         (with shape identical to data).
+        Defaults to numpy.isnan (or pandas.isna if X is a dataframe)
     thr : tuple or int, optional
         The desired ratio of invalid entries.
         If a single integer, use the same value both for rows and columns.
@@ -161,6 +157,9 @@ def clean(X, condition, *, thr=0.1, alpha=0.5):
         for which the fraction of invalid entries is lower than the thresholds.
 
     """
-    cleaner = Cleaner(condition, thr=thr, alpha=alpha)
+    cleaner = Cleaner(condition=condition, thr=thr, alpha=alpha)
     cleaner.fit(X)
-    return cleaner.rows_, cleaner.cols_
+    if return_clean_data:
+        return cleaner.rows_, cleaner.cols_, cleaner.transform(X)
+    else:
+        return cleaner.rows_, cleaner.cols_
