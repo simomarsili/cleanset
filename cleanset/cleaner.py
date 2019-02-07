@@ -25,6 +25,8 @@ class Cleaner(BaseEstimator, TransformerMixin):
         self.mask_ = None
         self.rows_ = None
         self.cols_ = None
+        self.col_invalid = None
+        self.row_invalid = None
         if callable(condition):
             self.condition = condition
         elif hasattr(condition, 'ndim'):
@@ -62,41 +64,42 @@ class Cleaner(BaseEstimator, TransformerMixin):
             mask = self.mask_from(self.condition, X)
         self.mask_ = mask
 
-        n1, p1 = n, p
-        ng0 = mask.sum(axis=0)  # p-dimensional (columns)
-        ng1 = mask.sum(axis=1)  # n-dimensional (rows)
+        n1, p1 = n, p  # # of filtered rows and columns
+        self.col_invalid = mask.sum(axis=0)  # p-dimensional (columns)
+        self.row_invalid = mask.sum(axis=1)  # n-dimensional (rows)
         while 1:
+            # index of the row with the largest number of invalid entries
+            r = numpy.argmax(self.row_invalid)
+            # index of the column with the largest number of invalid entries
+            c = numpy.argmax(self.col_invalid)
 
-            r = numpy.argmax(ng1)  # index of most gappy row
-            c = numpy.argmax(ng0)  # index of most gappy column
+            # fraction of invalid entries in row r
+            nr = self.row_invalid[r] / p1
+            # fraction of invalid entries in column c
+            nc = self.col_invalid[c] / n1
 
-            nr = ng1[r]  # of gaps in the most gappy row
-            nc = ng0[c]  # of gaps in the most gappy column
-
-            if nr <= p1 * self.row_thr and nc <= n1 * self.col_thr:
+            if nr <= self.row_thr and nc <= self.col_thr:
                 self.rows_, self.cols_ = rows, cols
-                print('final: ', len(rows), n1, p1, nr/p1, nc/n1)
+                print('final: ', len(rows), n1, p1, nr, nc)
                 return self
             else:
                 if len(rows) % 1 == 0:
-                    print(len(rows), n1, p1, nr/p1, nc/n1)
-            if (1 - self.alpha) * (nc / n1) / self.col_thr > (
-                    self.alpha * (nr / p1) / self.row_thr):
+                    print(len(rows), n1, p1, nr, nc)
+            if (1 - self.alpha) * nc / self.col_thr > (
+                    self.alpha * nr / self.row_thr):
                 # remove a column
                 p1 -= 1
                 cols.remove(c)
-                ng0[c] = 0
-                ng1 -= mask[:, c]
+                self.col_invalid[c] = 0
+                self.row_invalid -= mask[:, c]
                 mask[:, c] = False
-                # ali = numpy.delete(ali, cmax, axis=1)
             else:
                 n1 -= 1
                 # remve a row
                 rows.remove(r)
-                ng0 -= mask[r]
-                ng1[r] = 0
+                self.col_invalid -= mask[r]
+                self.row_invalid[r] = 0
                 mask[r] = False
-            # ali = numpy.delete(ali, rmax, axis=0)
 
     def transform(self, X):
         if self.rows_ is not None:
