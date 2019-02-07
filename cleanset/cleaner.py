@@ -25,12 +25,12 @@ class Cleaner(BaseEstimator, TransformerMixin):
         self.mask_ = None
         self.rows_ = None
         self.cols_ = None
-        self.col_invalid = None
-        self.row_invalid = None
+        self.col_ninvalid = None
+        self.row_ninvalid = None
         if callable(condition):
             self.condition = condition
         elif hasattr(condition, 'ndim'):
-            if numpy.unique(condition) == [0, 1]:
+            if set(numpy.unique(condition)) == set([0, 1]):
                 self.mask_ = condition
         try:
             self.row_thr, self.col_thr = thr
@@ -61,22 +61,21 @@ class Cleaner(BaseEstimator, TransformerMixin):
         rows = list(range(n))
         cols = list(range(p))
         if self.mask_ is None:
-            mask = self.mask_from(self.condition, X)
-        self.mask_ = mask
+            self.mask_ = numpy.vectorize(self.condition)(X)
 
         n1, p1 = n, p  # # of filtered rows and columns
-        self.col_invalid = mask.sum(axis=0)  # p-dimensional (columns)
-        self.row_invalid = mask.sum(axis=1)  # n-dimensional (rows)
+        self.col_ninvalid = self.mask_.sum(axis=0)  # p-dimensional (columns)
+        self.row_ninvalid = self.mask_.sum(axis=1)  # n-dimensional (rows)
         while 1:
             # index of the row with the largest number of invalid entries
-            r = numpy.argmax(self.row_invalid)
+            r = numpy.argmax(self.row_ninvalid)
             # index of the column with the largest number of invalid entries
-            c = numpy.argmax(self.col_invalid)
+            c = numpy.argmax(self.col_ninvalid)
 
             # fraction of invalid entries in row r
-            nr = self.row_invalid[r] / p1
+            nr = self.row_ninvalid[r] / p1
             # fraction of invalid entries in column c
-            nc = self.col_invalid[c] / n1
+            nc = self.col_ninvalid[c] / n1
 
             if nr <= self.row_thr and nc <= self.col_thr:
                 self.rows_, self.cols_ = rows, cols
@@ -90,16 +89,24 @@ class Cleaner(BaseEstimator, TransformerMixin):
                 # remove a column
                 p1 -= 1
                 cols.remove(c)
-                self.col_invalid[c] = 0
-                self.row_invalid -= mask[:, c]
-                mask[:, c] = False
+                self.col_ninvalid[c] = 0
+                self.row_ninvalid -= self.mask_[:, c]
             else:
-                n1 -= 1
-                # remve a row
-                rows.remove(r)
-                self.col_invalid -= mask[r]
-                self.row_invalid[r] = 0
-                mask[r] = False
+                ninvalid = self.row_ninvalid[r]
+                rset = [x for x in rows if self.row_ninvalid[x] == ninvalid]
+                nrset = len(rset)
+                if nrset > 1:
+                    # remove all rows with the same number of invalid entries
+                    n1 -= nrset
+                    rows = [x for x in rows if self.row_ninvalid[x] < ninvalid]
+                    self.row_ninvalid[rset] = 0
+                    self.col_ninvalid -= self.mask_[rset].sum(axis=0)
+                else:
+                    # remove a single row
+                    n1 -= 1
+                    rows.remove(r)
+                    self.col_ninvalid -= self.mask_[r]
+                    self.row_ninvalid[r] = 0
 
     def transform(self, X):
         if self.rows_ is not None:
