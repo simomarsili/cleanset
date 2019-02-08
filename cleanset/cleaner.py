@@ -60,7 +60,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
         Parameters
         ----------
-        X : array-like, shape [n_samples, n_features]
+        X : dataframe or array-like, shape [n_samples, n_features]
             The data used to compute the valid rows and columns.
         y
             Ignored
@@ -137,25 +137,28 @@ def clean(X, *, condition='isna', thr=0.1, alpha=0.5, return_clean_data=False):
 
     Parameters
     ----------
-    X : array-like, shape [n_samples, n_features]
+    X : dataframe or array-like, shape [n_samples, n_features]
         The data used to compute the valid rows and columns.
-    condition : callable or array, optional
+    condition : callable or array
         If callable, condition(x) is True if x is an invalid value.
-        If a 2D boolean array, a mask for invalid entries
-        (with shape identical to data).
-        Defaults to numpy.isnan (or pandas.isna if X is a dataframe)
+        If a 2D array, a boolean mask for invalid entries with shape
+        [n_samples, n_features].
+        Default: 'isna', detect NA values via pandas.isna() or numpy.isnan().
     thr : tuple or int, optional
-        The desired ratio of invalid entries.
-        If a single integer, use the same value both for rows and columns.
+        Target fraction of invalid entries for rows and columns.
+        If a single integer, use the same value.
     alpha : float, optional
-        For 0.5 < alpha < 1, remove rows more easily than columns.
-        0 < alpha < 1.
+        Larger values bias the filtering process toward row and against column
+        removal. 0 < alpha < 1.
+    return_clean_data : bool, optional
+        If True, also return filtered data.
 
     Returns
     -------
     (rows, columns) : tuple of lists
         Indices of rows and columns identifying a submatrix of data
         for which the fraction of invalid entries is lower than the thresholds.
+        If return_clean_data is True: return (rows, columns, filtered_data)
 
     """
     cleaner = Cleaner(condition=condition, thr=thr, alpha=alpha)
