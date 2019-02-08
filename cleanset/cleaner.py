@@ -51,8 +51,8 @@ class Cleaner(BaseEstimator, TransformerMixin):
             self.row_thr, self.col_thr = thr
         except TypeError:
             self.row_thr, self.col_thr = (thr, thr)
-        if 0 < alpha < 1:
-            self.alpha = alpha
+        if 0 <= alpha <= 1:
+            self.alpha = numpy.float(alpha)
         else:
             raise ValueError('alpha must be in the [0,1] range')
 
@@ -79,6 +79,25 @@ class Cleaner(BaseEstimator, TransformerMixin):
                     self.condition, result_type='broadcast').values
             except AttributeError:
                 self.mask_ = numpy.vectorize(self.condition)(X)
+
+        # check alpha in {0,1}
+        if self.alpha.is_integer():
+            if self.alpha == 0:
+                # first remove cols
+                cols = [k for k, x in enumerate(self.mask_.mean(axis=0))
+                        if x <= self.col_thr]
+                rows = [k for k, x in
+                        enumerate(self.mask_[:, cols].mean(axis=1))
+                        if x <= self.row_thr]
+            elif self.alpha == 1:
+                # first remove rows
+                rows = [k for k, x in enumerate(self.mask_.mean(axis=1))
+                        if x <= self.row_thr]
+                cols = [k for k, x in
+                        enumerate(self.mask_[rows].mean(axis=0))
+                        if x <= self.col_thr]
+            self.rows_, self.cols_ = rows, cols
+            return self
 
         n1, p1 = n, p  # # of filtered rows and columns
         self.col_ninvalid = self.mask_.sum(axis=0)  # p-dimensional (columns)
