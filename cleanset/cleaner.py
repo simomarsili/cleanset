@@ -37,8 +37,9 @@ class Cleaner(BaseEstimator, TransformerMixin):
                         return numpy.isnan(x)
                     except TypeError:
                         return False
+                self.condition = condition
             else:
-                condition = pandas.isna
+                self.condition = pandas.isna
         elif callable(condition):
             self.condition = condition
         elif hasattr(condition, 'ndim'):
@@ -82,43 +83,47 @@ class Cleaner(BaseEstimator, TransformerMixin):
         n1, p1 = n, p  # # of filtered rows and columns
         self.col_ninvalid = self.mask_.sum(axis=0)  # p-dimensional (columns)
         self.row_ninvalid = self.mask_.sum(axis=1)  # n-dimensional (rows)
+        row_convergence = False
+        col_convergence = False
         while 1:
             # index of the row with the largest number of invalid entries
             r = numpy.argmax(self.row_ninvalid)
             # index of the column with the largest number of invalid entries
             c = numpy.argmax(self.col_ninvalid)
 
-            # fraction of invalid entries in row r
-            nr = self.row_ninvalid[r] / p1
-            # fraction of invalid entries in column c
-            nc = self.col_ninvalid[c] / n1
+            # n. of invalid entries in row r
+            nr = self.row_ninvalid[r]
+            # n. of invalid entries in column c
+            nc = self.col_ninvalid[c]
 
-            if nr <= self.row_thr and nc <= self.col_thr:
+            col_fraction = (1 - self.alpha) * (nc / n1)
+            row_fraction = self.alpha * (nr / p1)
+
+            if nr <= p1 * self.row_thr:
+                row_convergence = True
+                row_fraction = -1
+            if nc <= n1 * self.col_thr:
+                col_convergence = True
+                col_fraction = -1
+
+            # print(n1, p1, row_fraction, col_fraction)
+            if row_convergence and col_convergence:
                 self.rows_, self.cols_ = rows, cols
                 return self
-            if (1 - self.alpha) * nc / self.col_thr > (
-                    self.alpha * nr / self.row_thr):
+            if col_fraction / self.col_thr > row_fraction / self.row_thr:
                 # remove a column
                 p1 -= 1
                 cols.remove(c)
                 self.col_ninvalid[c] = 0
                 self.row_ninvalid -= self.mask_[:, c]
             else:
-                ninvalid = self.row_ninvalid[r]
-                rset = [x for x in rows if self.row_ninvalid[x] == ninvalid]
+                rset = [x for x in rows if self.row_ninvalid[x] == nr]
                 nrset = len(rset)
-                if nrset > 1:
-                    # remove all rows with the same number of invalid entries
-                    n1 -= nrset
-                    rows = [x for x in rows if self.row_ninvalid[x] < ninvalid]
-                    self.row_ninvalid[rset] = 0
-                    self.col_ninvalid -= self.mask_[rset].sum(axis=0)
-                else:
-                    # remove a single row
-                    n1 -= 1
-                    rows.remove(r)
-                    self.col_ninvalid -= self.mask_[r]
-                    self.row_ninvalid[r] = 0
+                # remove all rows with the same number of invalid entries
+                n1 -= nrset
+                rows = [x for x in rows if self.row_ninvalid[x] < nr]
+                self.row_ninvalid[rset] = 0
+                self.col_ninvalid -= self.mask_[rset].sum(axis=0)
             assert n1 > 0 and p1 > 0, 'This point should not be reached'
 
     def transform(self, X):
