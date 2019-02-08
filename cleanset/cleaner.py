@@ -9,19 +9,19 @@ class Cleaner(BaseEstimator, TransformerMixin):
     ----------
     condition : callable or array
         If callable, condition(x) is True if x is an invalid value.
-        If a 2D boolean array, a mask for invalid entries
-        (with shape identical to data).
+        If a 2D array, a boolean mask for invalid entries with shape
+        [n_samples, n_features].
+        Default: 'isna', detect NA values via pandas.isna() or numpy.isnan().
     thr : tuple or int, optional
-        The desired ratio of invalid entries.
-        If a single integer, use the same value both for rows and columns.
+        Target fraction of invalid entries for rows and columns.
+        If a single integer, use the same value.
     alpha : float, optional
-        For 0.5 < alpha < 1, remove rows more easily than columns.
-        0 < alpha < 1.
+        Larger values bias the filtering process toward row and against column
+        removal. 0 < alpha < 1.
 
     """
 
     def __init__(self, condition='isna', thr=0.1, alpha=0.5):
-        self.condition = None
         self.mask_ = None
         self.rows_ = None
         self.cols_ = None
@@ -39,12 +39,13 @@ class Cleaner(BaseEstimator, TransformerMixin):
                         return False
             else:
                 condition = pandas.isna
-
-        if callable(condition):
+        elif callable(condition):
             self.condition = condition
         elif hasattr(condition, 'ndim'):
             if set(numpy.unique(condition)) == set([0, 1]):
                 self.mask_ = condition
+        else:
+            raise ValueError('Invalid condition: %r' % condition)
         try:
             self.row_thr, self.col_thr = thr
         except TypeError:
