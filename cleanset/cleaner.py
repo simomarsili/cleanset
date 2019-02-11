@@ -189,7 +189,7 @@ def clean(X, t0, t1, *, condition='isna', axis=0.5, return_clean_data=False):
         If return_clean_data is True: return (rows, columns, filtered_data)
 
     """
-    cleaner = Cleaner(condition=condition, thr=thr, axis=axis)
+    cleaner = Cleaner(t0=t0, t1=t1, condition=condition, axis=axis)
     cleaner.fit(X)
     if return_clean_data:
         return cleaner.rows_, cleaner.cols_, cleaner.transform(X)
