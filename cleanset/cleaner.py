@@ -19,7 +19,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
     axis : int or float, optional
         If axis == 0, first remove rows with too many invalid entries,
         then columns. If 0 < axis < 1, iterately remove the row/column with the
-        largest fraction of invalid entries; larger values tend to remove
+        largest fraction of invalid entries; values larger than 0.5 remove
         columns faster than rows. If axis == 1, columns are removed first.
 
     """
@@ -176,7 +176,7 @@ def clean(X, f0, f1, *, condition='isna', axis=0.5, return_clean_data=False):
     axis : int or float, optional
         If axis == 0, first remove rows with too many invalid entries,
         then columns. If 0 < axis < 1, iterately remove the row/column with the
-        largest fraction of invalid entries; larger values tend to remove
+        largest fraction of invalid entries; values larger than 0.5 remove
         columns faster than rows. If axis == 1, columns are removed first.
     return_clean_data : bool, optional
         If True, also return filtered data.
