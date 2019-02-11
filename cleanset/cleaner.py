@@ -7,9 +7,9 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
     Parameters
     ----------
-    t0 : float
+    f0 : float
         Target fraction of invalid entries for rows.
-    t1 : float
+    f1 : float
         Target fraction of invalid entries for columns.
     condition : callable or array
         If callable, condition(x) is True if x is an invalid value.
@@ -24,7 +24,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
     """
 
-    def __init__(self, t0, t1, *, condition='isna', axis=0.5):
+    def __init__(self, f0, f1, *, condition='isna', axis=0.5):
         self.mask_ = None
         self.rows_ = None
         self.cols_ = None
@@ -50,10 +50,10 @@ class Cleaner(BaseEstimator, TransformerMixin):
                 self.mask_ = condition
         else:
             raise ValueError('Invalid condition: %r' % condition)
-        if t0 is None or t1 is None:
+        if f0 is None or f1 is None:
             raise ValueError('Thresholds (%r, %r) should be floats in the '
-                             '0 < thr < 1 range' % (t0, t1))
-        self.t0, self.t1 = t0, t1
+                             '0 < thr < 1 range' % (f0, f1))
+        self.f0, self.f1 = f0, f1
         if 0 <= axis <= 1:
             self.axis = numpy.float(axis)
         else:
@@ -88,17 +88,17 @@ class Cleaner(BaseEstimator, TransformerMixin):
             if self.axis == 0:
                 # first remove cols
                 cols = [k for k, x in enumerate(self.mask_.mean(axis=0))
-                        if x <= self.t1]
+                        if x <= self.f1]
                 rows = [k for k, x in
                         enumerate(self.mask_[:, cols].mean(axis=1))
-                        if x <= self.t0]
+                        if x <= self.f0]
             elif self.axis == 1:
                 # first remove rows
                 rows = [k for k, x in enumerate(self.mask_.mean(axis=1))
-                        if x <= self.t0]
+                        if x <= self.f0]
                 cols = [k for k, x in
                         enumerate(self.mask_[rows].mean(axis=0))
-                        if x <= self.t1]
+                        if x <= self.f1]
             self.rows_, self.cols_ = rows, cols
             return self
 
@@ -121,17 +121,17 @@ class Cleaner(BaseEstimator, TransformerMixin):
             row_fraction = (1 - self.axis) * (nr / p1)
             col_fraction = self.axis * (nc / n1)
 
-            if nr <= p1 * self.t0:
+            if nr <= p1 * self.f0:
                 row_convergence = True
                 row_fraction = -1
-            if nc <= n1 * self.t1:
+            if nc <= n1 * self.f1:
                 col_convergence = True
                 col_fraction = -1
 
             if row_convergence and col_convergence:
                 self.rows_, self.cols_ = rows, cols
                 return self
-            if col_fraction / self.t1 > row_fraction / self.t0:
+            if col_fraction / self.f1 > row_fraction / self.f0:
                 # remove a column
                 p1 -= 1
                 cols.remove(c)
@@ -156,7 +156,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
             raise ValueError('This istance is Not fitted yet.')
 
 
-def clean(X, t0, t1, *, condition='isna', axis=0.5, return_clean_data=False):
+def clean(X, f0, f1, *, condition='isna', axis=0.5, return_clean_data=False):
     """
     Clean data from invalid entries.
 
@@ -164,9 +164,9 @@ def clean(X, t0, t1, *, condition='isna', axis=0.5, return_clean_data=False):
     ----------
     X : dataframe or array-like, shape [n_samples, n_features]
         The data used to compute the valid rows and columns.
-    t0 : float
+    f0 : float
         Target fraction of invalid entries for rows.
-    t1 : float
+    f1 : float
         Target fraction of invalid entries for columns.
     condition : callable or array
         If callable, condition(x) is True if x is an invalid value.
@@ -189,7 +189,7 @@ def clean(X, t0, t1, *, condition='isna', axis=0.5, return_clean_data=False):
         If return_clean_data is True: return (rows, columns, filtered_data)
 
     """
-    cleaner = Cleaner(t0=t0, t1=t1, condition=condition, axis=axis)
+    cleaner = Cleaner(f0=f0, f1=f1, condition=condition, axis=axis)
     cleaner.fit(X)
     if return_clean_data:
         return cleaner.rows_, cleaner.cols_, cleaner.transform(X)
