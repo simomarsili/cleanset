@@ -7,14 +7,14 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
     Parameters
     ----------
+    thr : tuple or int
+        Target fraction of invalid entries for rows and columns.
+        If a single integer, use the same value for both.
     condition : callable or array
         If callable, condition(x) is True if x is an invalid value.
         If a 2D array, a boolean mask for invalid entries with shape
         [n_samples, n_features].
         Default: 'isna', detect NA values via pandas.isna() or numpy.isnan().
-    thr : tuple or int, optional
-        Target fraction of invalid entries for rows and columns.
-        If a single integer, use the same value for both.
     axis : int or float, optional
         If axis == 0, first remove rows with too many invalid entries,
         then columns. If 0 < axis < 1, iterately remove the row/column with the
@@ -23,7 +23,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
     """
 
-    def __init__(self, condition='isna', thr=0.1, axis=0.5):
+    def __init__(self, thr, *, condition='isna', axis=0.5):
         self.mask_ = None
         self.rows_ = None
         self.cols_ = None
@@ -49,6 +49,9 @@ class Cleaner(BaseEstimator, TransformerMixin):
                 self.mask_ = condition
         else:
             raise ValueError('Invalid condition: %r' % condition)
+        if thr is None:
+            raise ValueError('Threshold (%r) should be a a float or a tuple'
+                             'of floats in the 0 < thr < 1 range' % thr)
         try:
             self.row_thr, self.col_thr = thr
         except TypeError:
@@ -157,7 +160,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
             raise ValueError('This istance is Not fitted yet.')
 
 
-def clean(X, *, condition='isna', thr=0.1, axis=0.5, return_clean_data=False):
+def clean(X, thr, *, condition='isna', axis=0.5, return_clean_data=False):
     """
     Clean data from invalid entries.
 
@@ -165,14 +168,14 @@ def clean(X, *, condition='isna', thr=0.1, axis=0.5, return_clean_data=False):
     ----------
     X : dataframe or array-like, shape [n_samples, n_features]
         The data used to compute the valid rows and columns.
+    thr : tuple or int
+        Target fraction of invalid entries for rows and columns.
+        If a single integer, use the same value for both.
     condition : callable or array
         If callable, condition(x) is True if x is an invalid value.
         If a 2D array, a boolean mask for invalid entries with shape
         [n_samples, n_features].
         Default: 'isna', detect NA values via pandas.isna() or numpy.isnan().
-    thr : tuple or int, optional
-        Target fraction of invalid entries for rows and columns.
-        If a single integer, use the same value for both.
     axis : int or float, optional
         If axis == 0, first remove rows with too many invalid entries,
         then columns. If 0 < axis < 1, iterately remove the row/column with the
