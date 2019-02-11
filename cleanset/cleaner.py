@@ -130,7 +130,6 @@ class Cleaner(BaseEstimator, TransformerMixin):
                 col_convergence = True
                 col_fraction = -1
 
-            # print(n1, p1, row_fraction, col_fraction)
             if row_convergence and col_convergence:
                 self.rows_, self.cols_ = rows, cols
                 return self
@@ -148,7 +147,6 @@ class Cleaner(BaseEstimator, TransformerMixin):
                 rows = [x for x in rows if self.row_ninvalid[x] < nr]
                 self.row_ninvalid[rset] = 0
                 self.col_ninvalid -= self.mask_[rset].sum(axis=0)
-            assert n1 > 0 and p1 > 0, 'This point should not be reached'
 
     def transform(self, X):
         if self.rows_ is not None:
