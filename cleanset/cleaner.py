@@ -14,14 +14,16 @@ class Cleaner(BaseEstimator, TransformerMixin):
         Default: 'isna', detect NA values via pandas.isna() or numpy.isnan().
     thr : tuple or int, optional
         Target fraction of invalid entries for rows and columns.
-        If a single integer, use the same value.
-    alpha : float, optional
-        Larger values bias the filtering process toward row and against column
-        removal. 0 < alpha < 1.
+        If a single integer, use the same value for both.
+    axis : int or float, optional
+        If axis == 0, first remove rows with too many invalid entries,
+        then columns. If 0 < axis < 1, iterately remove the row/column with the
+        largest fraction of invalid entries; larger values tend to remove
+        columns faster than rows. If axis == 1, columns are removed first.
 
     """
 
-    def __init__(self, condition='isna', thr=0.1, alpha=0.5):
+    def __init__(self, condition='isna', thr=0.1, axis=0.5):
         self.mask_ = None
         self.rows_ = None
         self.cols_ = None
@@ -51,10 +53,10 @@ class Cleaner(BaseEstimator, TransformerMixin):
             self.row_thr, self.col_thr = thr
         except TypeError:
             self.row_thr, self.col_thr = (thr, thr)
-        if 0 <= alpha <= 1:
-            self.alpha = numpy.float(alpha)
+        if 0 <= axis <= 1:
+            self.axis = numpy.float(axis)
         else:
-            raise ValueError('alpha must be in the [0,1] range')
+            raise ValueError('axis must be in the [0,1] range')
 
     def fit(self, X, y=None):
         """Compute the subset of valid rows and columns.
@@ -80,16 +82,16 @@ class Cleaner(BaseEstimator, TransformerMixin):
             except AttributeError:
                 self.mask_ = numpy.vectorize(self.condition)(X)
 
-        # check alpha in {0,1}
-        if self.alpha.is_integer():
-            if self.alpha == 0:
+        # check axis in {0,1}
+        if self.axis.is_integer():
+            if self.axis == 0:
                 # first remove cols
                 cols = [k for k, x in enumerate(self.mask_.mean(axis=0))
                         if x <= self.col_thr]
                 rows = [k for k, x in
                         enumerate(self.mask_[:, cols].mean(axis=1))
                         if x <= self.row_thr]
-            elif self.alpha == 1:
+            elif self.axis == 1:
                 # first remove rows
                 rows = [k for k, x in enumerate(self.mask_.mean(axis=1))
                         if x <= self.row_thr]
@@ -115,8 +117,8 @@ class Cleaner(BaseEstimator, TransformerMixin):
             # n. of invalid entries in column c
             nc = self.col_ninvalid[c]
 
-            col_fraction = (1 - self.alpha) * (nc / n1)
-            row_fraction = self.alpha * (nr / p1)
+            row_fraction = (1 - self.axis) * (nr / p1)
+            col_fraction = self.axis * (nc / n1)
 
             if nr <= p1 * self.row_thr:
                 row_convergence = True
@@ -155,7 +157,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
             raise ValueError('This istance is Not fitted yet.')
 
 
-def clean(X, *, condition='isna', thr=0.1, alpha=0.5, return_clean_data=False):
+def clean(X, *, condition='isna', thr=0.1, axis=0.5, return_clean_data=False):
     """
     Clean data from invalid entries.
 
@@ -170,10 +172,12 @@ def clean(X, *, condition='isna', thr=0.1, alpha=0.5, return_clean_data=False):
         Default: 'isna', detect NA values via pandas.isna() or numpy.isnan().
     thr : tuple or int, optional
         Target fraction of invalid entries for rows and columns.
-        If a single integer, use the same value.
-    alpha : float, optional
-        Larger values bias the filtering process toward row and against column
-        removal. 0 < alpha < 1.
+        If a single integer, use the same value for both.
+    axis : int or float, optional
+        If axis == 0, first remove rows with too many invalid entries,
+        then columns. If 0 < axis < 1, iterately remove the row/column with the
+        largest fraction of invalid entries; larger values tend to remove
+        columns faster than rows. If axis == 1, columns are removed first.
     return_clean_data : bool, optional
         If True, also return filtered data.
 
@@ -185,7 +189,7 @@ def clean(X, *, condition='isna', thr=0.1, alpha=0.5, return_clean_data=False):
         If return_clean_data is True: return (rows, columns, filtered_data)
 
     """
-    cleaner = Cleaner(condition=condition, thr=thr, alpha=alpha)
+    cleaner = Cleaner(condition=condition, thr=thr, axis=axis)
     cleaner.fit(X)
     if return_clean_data:
         return cleaner.rows_, cleaner.cols_, cleaner.transform(X)
