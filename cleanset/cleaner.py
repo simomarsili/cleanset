@@ -7,9 +7,10 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
     Parameters
     ----------
-    thr : tuple or int
-        Target fraction of invalid entries for rows and columns.
-        If a single integer, use the same value for both.
+    t0 : float
+        Target fraction of invalid entries for rows.
+    t1 : float
+        Target fraction of invalid entries for columns.
     condition : callable or array
         If callable, condition(x) is True if x is an invalid value.
         If a 2D array, a boolean mask for invalid entries with shape
@@ -23,7 +24,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
     """
 
-    def __init__(self, thr, *, condition='isna', axis=0.5):
+    def __init__(self, t0, t1, *, condition='isna', axis=0.5):
         self.mask_ = None
         self.rows_ = None
         self.cols_ = None
@@ -49,13 +50,10 @@ class Cleaner(BaseEstimator, TransformerMixin):
                 self.mask_ = condition
         else:
             raise ValueError('Invalid condition: %r' % condition)
-        if thr is None:
-            raise ValueError('Threshold (%r) should be a a float or a tuple'
-                             'of floats in the 0 < thr < 1 range' % thr)
-        try:
-            self.row_thr, self.col_thr = thr
-        except TypeError:
-            self.row_thr, self.col_thr = (thr, thr)
+        if t0 is None or t1 is None:
+            raise ValueError('Thresholds (%r, %r) should be floats in the '
+                             '0 < thr < 1 range' % (t0, t1))
+        self.t0, self.t1 = t0, t1
         if 0 <= axis <= 1:
             self.axis = numpy.float(axis)
         else:
@@ -90,17 +88,17 @@ class Cleaner(BaseEstimator, TransformerMixin):
             if self.axis == 0:
                 # first remove cols
                 cols = [k for k, x in enumerate(self.mask_.mean(axis=0))
-                        if x <= self.col_thr]
+                        if x <= self.t1]
                 rows = [k for k, x in
                         enumerate(self.mask_[:, cols].mean(axis=1))
-                        if x <= self.row_thr]
+                        if x <= self.t0]
             elif self.axis == 1:
                 # first remove rows
                 rows = [k for k, x in enumerate(self.mask_.mean(axis=1))
-                        if x <= self.row_thr]
+                        if x <= self.t0]
                 cols = [k for k, x in
                         enumerate(self.mask_[rows].mean(axis=0))
-                        if x <= self.col_thr]
+                        if x <= self.t1]
             self.rows_, self.cols_ = rows, cols
             return self
 
@@ -123,17 +121,17 @@ class Cleaner(BaseEstimator, TransformerMixin):
             row_fraction = (1 - self.axis) * (nr / p1)
             col_fraction = self.axis * (nc / n1)
 
-            if nr <= p1 * self.row_thr:
+            if nr <= p1 * self.t0:
                 row_convergence = True
                 row_fraction = -1
-            if nc <= n1 * self.col_thr:
+            if nc <= n1 * self.t1:
                 col_convergence = True
                 col_fraction = -1
 
             if row_convergence and col_convergence:
                 self.rows_, self.cols_ = rows, cols
                 return self
-            if col_fraction / self.col_thr > row_fraction / self.row_thr:
+            if col_fraction / self.t1 > row_fraction / self.t0:
                 # remove a column
                 p1 -= 1
                 cols.remove(c)
@@ -158,7 +156,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
             raise ValueError('This istance is Not fitted yet.')
 
 
-def clean(X, thr, *, condition='isna', axis=0.5, return_clean_data=False):
+def clean(X, t0, t1, *, condition='isna', axis=0.5, return_clean_data=False):
     """
     Clean data from invalid entries.
 
@@ -166,9 +164,10 @@ def clean(X, thr, *, condition='isna', axis=0.5, return_clean_data=False):
     ----------
     X : dataframe or array-like, shape [n_samples, n_features]
         The data used to compute the valid rows and columns.
-    thr : tuple or int
-        Target fraction of invalid entries for rows and columns.
-        If a single integer, use the same value for both.
+    t0 : float
+        Target fraction of invalid entries for rows.
+    t1 : float
+        Target fraction of invalid entries for columns.
     condition : callable or array
         If callable, condition(x) is True if x is an invalid value.
         If a 2D array, a boolean mask for invalid entries with shape
