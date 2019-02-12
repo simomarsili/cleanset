@@ -2,9 +2,7 @@
 cleanset
 ========
 **cleanset** is a Python package for the educated removal of invalid/undesired
-entries from data matrices. It implements two alternative tools:
-- the function **cleanset.clean** 
-- the class **cleanset.Cleaner**  (a scikit-learn compatible transformer).
+entries from data matrices.
 
 Contributing
 ============

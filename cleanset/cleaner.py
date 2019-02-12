@@ -85,14 +85,14 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
         # check axis in {0,1}
         if self.axis.is_integer():
-            if self.axis == 0:
+            if self.axis == 1:
                 # first remove cols
                 cols = [k for k, x in enumerate(self.mask_.mean(axis=0))
                         if x <= self.f1]
                 rows = [k for k, x in
                         enumerate(self.mask_[:, cols].mean(axis=1))
                         if x <= self.f0]
-            elif self.axis == 1:
+            elif self.axis == 0:
                 # first remove rows
                 rows = [k for k, x in enumerate(self.mask_.mean(axis=1))
                         if x <= self.f0]
