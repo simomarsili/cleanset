@@ -1,5 +1,40 @@
+import logging
 import numpy
 from cleanset.base import BaseEstimator, TransformerMixin
+
+logging.basicConfig(
+    # filename=<filename>,
+    # filemode='a',
+    format='%(module)-10s %(funcName)-20s: %(levelname)-8s %(message)s',
+    datefmt='%H:%M:%S',
+    level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+
+class CleanerError(Exception):
+    """Base class for pcdhit exceptions."""
+
+
+class InvalidEntriesDefinitionError(CleanerError):
+    """Invalid definition."""
+
+
+class InvalidTargetFractionError(CleanerError):
+    """Invalid target fraction of invalid values."""
+    def __init__(self):
+        message = 'valid values are 0.0 <= target_fraction <= 1.0'
+        super().__init__(message)
+
+
+class AxisError(CleanerError):
+    """Invalid axis value."""
+    def __init__(self):
+        message = 'valid values are 0 <= axis <= 1'
+        super().__init__(message)
+
+
+class NotFittedError(CleanerError):
+    """Istance not fitted."""
 
 
 class Cleaner(BaseEstimator, TransformerMixin):
@@ -49,15 +84,16 @@ class Cleaner(BaseEstimator, TransformerMixin):
             if set(numpy.unique(condition)) == set([0, 1]):
                 self.mask_ = condition
         else:
-            raise ValueError('Invalid condition: %r' % condition)
-        if f0 is None or f1 is None:
-            raise ValueError('Thresholds (%r, %r) should be floats in the '
-                             '0 < thr < 1 range' % (f0, f1))
+            raise InvalidEntriesDefinitionError(condition)
+        if f0 is None or (not 0 < f0 < 1):
+            raise InvalidTargetFractionError
+        if f1 is None or (not 0 < f1 < 1):
+            raise InvalidTargetFractionError
         self.f0, self.f1 = f0, f1
         if 0 <= axis <= 1:
             self.axis = numpy.float(axis)
         else:
-            raise ValueError('axis must be in the [0,1] range')
+            raise AxisError
 
     def fit(self, X, y=None):
         """Compute the subset of valid rows and columns.
@@ -153,7 +189,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
             except AttributeError:
                 return X[self.rows_][:, self.cols_]
         else:
-            raise ValueError('This istance is Not fitted yet.')
+            raise NotFittedError
 
 
 def clean(X, f0, f1, *, condition='isna', axis=0.5, return_clean_data=False):
