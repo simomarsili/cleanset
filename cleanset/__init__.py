@@ -1,7 +1,6 @@
 import pkg_resources
 from cleanset.cleaner import Cleaner, clean
 
-k# the name of the project from the setup.py
 project_name = 'cleanset'
 __version__ = pkg_resources.require(project_name)[0].version
 __copyright__ = 'Copyright (C) 2019 Simone Marsili'
