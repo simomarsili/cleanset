@@ -1,3 +1,5 @@
+"""Contains Cleaner class and clean function."""
+
 import logging
 import numpy
 from cleanset.base import BaseEstimator, TransformerMixin
