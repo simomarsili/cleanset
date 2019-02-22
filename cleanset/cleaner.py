@@ -110,6 +110,9 @@ class Cleaner(BaseEstimator, TransformerMixin):
             k for k, x in enumerate(self.mask_.mean(axis=0))
             if x <= self.fna[1]
         ]
+        if not self.cols_:
+            self.rows_ = []
+            return self
         self.rows_ = [
             k for k, x in enumerate(self.mask_[:, self.cols_].mean(axis=1))
             if x <= self.fna[0]
@@ -122,6 +125,9 @@ class Cleaner(BaseEstimator, TransformerMixin):
             k for k, x in enumerate(self.mask_.mean(axis=1))
             if x <= self.fna[0]
         ]
+        if not self.rows_:
+            self.cols_ = []
+            return self
         self.cols_ = [
             k for k, x in enumerate(self.mask_[self.rows_].mean(axis=0))
             if x <= self.fna[1]
@@ -170,9 +176,14 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
         self.col_ninvalid = self.mask_.sum(axis=0)  # p-dimensional (columns)
         self.row_ninvalid = self.mask_.sum(axis=1)  # n-dimensional (rows)
+
         while 1:
             n1 = len(self.rows_)
             p1 = len(self.cols_)
+            if not p1 or not n1:
+                self.rows_ = []
+                self.cols_ = []
+                return self
 
             # index of the row with the largest number of invalid entries
             r = numpy.argmax(self.row_ninvalid)

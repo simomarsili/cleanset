@@ -24,17 +24,24 @@ def data():
     yield {'df': df}
 
 
-def test_cleaner(data):
+prms = [
+    (0., 0.2, (438, 83)),
+    (0.2, 0.1, (820, 82)),
+    (0.5, 0.1, (1868, 73)),
+    (1., 0.1, (1869, 72))]
+
+
+@pytest.mark.parametrize('axis, thr, expected', prms)
+def test_cleaner(data, axis, thr, expected):
     from cleanset import Cleaner
     df = data['df']
-    thr = 0.1
-    cleaner = Cleaner(fna=thr, axis=0.5)
-    assert cleaner.fit_transform(df).shape == (1868, 73)
+    cleaner = Cleaner(fna=thr, axis=axis)
+    assert cleaner.fit_transform(df).shape == expected
 
 
-def test_clean(data):
+@pytest.mark.parametrize('axis, thr, expected', prms)
+def test_clean(data, axis, thr, expected):
     from cleanset import clean
     df = data['df']
-    thr = 0.1
-    rows, cols = clean(df, fna=thr, axis=0.5)
-    assert (len(rows), len(cols)) == (1868, 73)
+    rows, cols = clean(df, fna=thr, axis=axis)
+    assert (len(rows), len(cols)) == expected
