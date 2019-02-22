@@ -87,9 +87,9 @@ class Cleaner(BaseEstimator, TransformerMixin):
             f0, f1 = fna
         except TypeError:
             f0 = f1 = fna
-        if f0 is None or (not 0 < f0 < 1):
+        if f0 is None or (not 0 <= f0 <= 1):
             raise InvalidTargetFractionError
-        if f1 is None or (not 0 < f1 < 1):
+        if f1 is None or (not 0 <= f1 <= 1):
             raise InvalidTargetFractionError
         self.fna = (f0, f1)
         if 0 <= axis <= 1:
