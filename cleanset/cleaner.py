@@ -95,6 +95,14 @@ class Cleaner(BaseEstimator, TransformerMixin):
         else:
             raise AxisError
 
+    @staticmethod
+    def mask(X, condition):
+        try:
+            # check if dataframe
+            return X.apply(condition, result_type='broadcast').values
+        except AttributeError:
+            return numpy.vectorize(condition)(X)
+
     def fit(self, X, y=None):
         """Compute the subset of valid rows and columns.
 
@@ -112,12 +120,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
         # build the mask
         if self.mask_ is None:
-            try:
-                # check if dataframe
-                self.mask_ = X.apply(
-                    self.condition, result_type='broadcast').values
-            except AttributeError:
-                self.mask_ = numpy.vectorize(self.condition)(X)
+            self.mask_ = self.mask(X, self.condition)
 
         # check axis in {0,1}
         if self.axis.is_integer():
