@@ -2,7 +2,7 @@
 cleanset
 ========
 Educated removal of missing/invalid/undesired entries from data matrices.
-Please check the docstrings.
+Check the docstrings.
 
 Contributing
 ============
