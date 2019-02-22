@@ -102,7 +102,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
         try:
             # check if dataframe
             # TODO: applymap
-            return X.apply(condition, result_type='broadcast').values
+            return X.applymap(condition).values
         except AttributeError:
             return numpy.vectorize(condition)(X)
 
