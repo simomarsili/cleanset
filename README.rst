@@ -1,8 +1,9 @@
 ========
 cleanset
 ========
-**cleanset** is a Python package for the educated removal of invalid/undesired
-entries from data matrices.
+**cleanset** is a Python package for the educated removal of
+missing/invalid/undesired entries from data matrices.
+Please check the docstrings.
 
 Contributing
 ============
