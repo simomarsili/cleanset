@@ -106,39 +106,37 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
     def _fit_remove_cols_first(self):
         # first remove cols
-        cols = [
+        self.cols_ = [
             k for k, x in enumerate(self.mask_.mean(axis=0)) if x <= self.f1
         ]
-        rows = [
-            k for k, x in enumerate(self.mask_[:, cols].mean(axis=1))
+        self.rows_ = [
+            k for k, x in enumerate(self.mask_[:, self.cols_].mean(axis=1))
             if x <= self.f0
         ]
-        self.rows_, self.cols_ = rows, cols
         return self
 
     def _fit_remove_rows_first(self):
         # first remove rows
-        rows = [
+        self.rows_ = [
             k for k, x in enumerate(self.mask_.mean(axis=1)) if x <= self.f0
         ]
-        cols = [
-            k for k, x in enumerate(self.mask_[rows].mean(axis=0))
+        self.cols_ = [
+            k for k, x in enumerate(self.mask_[self.rows_].mean(axis=0))
             if x <= self.f1
         ]
-        self.rows_, self.cols_ = rows, cols
         return self
 
     def _remove_column(self, c):
         # remove a column
-        self.cols.remove(c)
+        self.cols_.remove(c)
         self.col_ninvalid[c] = 0
         self.row_ninvalid -= self.mask_[:, c]
 
     def _remove_rows(self, r):
         # remove all rows with the same number of invalid entries of row r
         nr = self.row_ninvalid[r]
-        rset = [x for x in self.rows if self.row_ninvalid[x] == nr]
-        self.rows = [x for x in self.rows if self.row_ninvalid[x] < nr]
+        rset = [x for x in self.rows_ if self.row_ninvalid[x] == nr]
+        self.rows_ = [x for x in self.rows_ if self.row_ninvalid[x] < nr]
         self.row_ninvalid[rset] = 0
         self.col_ninvalid -= self.mask_[rset].sum(axis=0)
 
@@ -154,8 +152,8 @@ class Cleaner(BaseEstimator, TransformerMixin):
         """
 
         n, p = X.shape
-        self.rows = list(range(n))
-        self.cols = list(range(p))
+        self.rows_ = list(range(n))
+        self.cols_ = list(range(p))
 
         # build the mask
         if self.mask_ is None:
@@ -172,8 +170,8 @@ class Cleaner(BaseEstimator, TransformerMixin):
         row_convergence = False
         col_convergence = False
         while 1:
-            n1 = len(self.rows)
-            p1 = len(self.cols)
+            n1 = len(self.rows_)
+            p1 = len(self.cols_)
             # index of the row with the largest number of invalid entries
             r = numpy.argmax(self.row_ninvalid)
             # index of the column with the largest number of invalid entries
@@ -195,7 +193,6 @@ class Cleaner(BaseEstimator, TransformerMixin):
                 col_fraction = -1
 
             if row_convergence and col_convergence:
-                self.rows_, self.cols_ = self.rows, self.cols
                 return self
             if col_fraction / self.f1 > row_fraction / self.f0:
                 self._remove_column(c)
