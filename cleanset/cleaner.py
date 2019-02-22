@@ -15,6 +15,7 @@ class InvalidEntriesDefinitionError(CleanerError):
 
 class InvalidTargetFractionError(CleanerError):
     """Invalid target fraction of invalid values."""
+
     def __init__(self):
         message = 'valid values are 0.0 <= target_fraction <= 1.0'
         super().__init__(message)
@@ -22,6 +23,7 @@ class InvalidTargetFractionError(CleanerError):
 
 class AxisError(CleanerError):
     """Invalid axis value."""
+
     def __init__(self):
         message = 'valid values are 0 <= axis <= 1'
         super().__init__(message)
@@ -69,6 +71,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
                         return numpy.isnan(x)
                     except TypeError:
                         return False
+
                 self.condition = condition
             else:
                 self.condition = pandas.isna
@@ -117,18 +120,24 @@ class Cleaner(BaseEstimator, TransformerMixin):
         if self.axis.is_integer():
             if self.axis == 1:
                 # first remove cols
-                cols = [k for k, x in enumerate(self.mask_.mean(axis=0))
-                        if x <= self.f1]
-                rows = [k for k, x in
-                        enumerate(self.mask_[:, cols].mean(axis=1))
-                        if x <= self.f0]
+                cols = [
+                    k for k, x in enumerate(self.mask_.mean(axis=0))
+                    if x <= self.f1
+                ]
+                rows = [
+                    k for k, x in enumerate(self.mask_[:, cols].mean(axis=1))
+                    if x <= self.f0
+                ]
             elif self.axis == 0:
                 # first remove rows
-                rows = [k for k, x in enumerate(self.mask_.mean(axis=1))
-                        if x <= self.f0]
-                cols = [k for k, x in
-                        enumerate(self.mask_[rows].mean(axis=0))
-                        if x <= self.f1]
+                rows = [
+                    k for k, x in enumerate(self.mask_.mean(axis=1))
+                    if x <= self.f0
+                ]
+                cols = [
+                    k for k, x in enumerate(self.mask_[rows].mean(axis=0))
+                    if x <= self.f1
+                ]
             self.rows_, self.cols_ = rows, cols
             return self
 
