@@ -1,4 +1,4 @@
-data_file = 'nfl.csv.bz2'
+import pytest
 
 
 def get_tests_dir():
@@ -14,23 +14,27 @@ def get_tests_dir():
             return tests_dir
 
 
-def test_cleaner():
+@pytest.fixture()
+def data():
     import os
     import pandas
-    from cleanset import Cleaner
+    data_file = 'nfl.csv.bz2'
     source = os.path.join(get_tests_dir(), data_file)
     df = pandas.read_csv(source)
+    yield {'df': df}
+
+
+def test_cleaner(data):
+    from cleanset import Cleaner
+    df = data['df']
     thr = 0.1
     cleaner = Cleaner(f0=thr, f1=thr, axis=0.5)
     assert cleaner.fit_transform(df).shape == (1868, 73)
 
 
-def test_clean():
-    import os
-    import pandas
+def test_clean(data):
     from cleanset import clean
-    source = os.path.join(get_tests_dir(), data_file)
-    df = pandas.read_csv(source)
+    df = data['df']
     thr = 0.1
     rows, cols = clean(df, f0=thr, f1=thr, axis=0.5)
     assert (len(rows), len(cols)) == (1868, 73)
