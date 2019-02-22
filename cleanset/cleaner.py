@@ -101,7 +101,6 @@ class Cleaner(BaseEstimator, TransformerMixin):
     def _get_mask(X, condition):
         try:
             # check if dataframe
-            # TODO: applymap
             return X.applymap(condition).values
         except AttributeError:
             return numpy.vectorize(condition)(X)

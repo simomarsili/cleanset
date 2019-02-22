@@ -36,7 +36,7 @@ import numpy
 try:
     from inspect import signature  # pylint: disable=wrong-import-order
 except ImportError:
-    from datacleaner.funcsigs import signature
+    from cleanset.funcsigs import signature
 from collections import defaultdict  # pylint: disable=wrong-import-order
 
 
