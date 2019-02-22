@@ -1,3 +1,6 @@
+data_file = 'nfl.csv.bz2'
+
+
 def tests_dir():
     """Return None is no tests dir."""
     import os
@@ -11,5 +14,12 @@ def tests_dir():
             return tests_dir
 
 
-def test_0():
-    assert 1 == 1
+def test_cleanset():
+    import os
+    import pandas
+    from cleanset import Cleaner
+    source = os.path.join(tests_dir(), data_file)
+    df = pandas.read_csv(source)
+    thr = 0.1
+    cleaner = Cleaner(f0=thr, f1=thr, axis=0.5)
+    assert cleaner.fit_transform(df).shape == (1868, 73)
