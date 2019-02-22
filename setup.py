@@ -11,6 +11,8 @@ SETUP_REQUIRES = []
 INSTALL_REQUIRES = [
     # # this is an example of URL based requirement (see PEP508):
     # 'repo @ http://github.com/user/repo/asrchive/master.tar.gz',
+    'numpy',
+    'pandas',
 ]
 EXTRAS_REQUIRES = {'test': ['pytest']}
 
