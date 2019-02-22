@@ -99,9 +99,34 @@ class Cleaner(BaseEstimator, TransformerMixin):
     def mask(X, condition):
         try:
             # check if dataframe
+            # TODO: applymap
             return X.apply(condition, result_type='broadcast').values
         except AttributeError:
             return numpy.vectorize(condition)(X)
+
+    def _fit_remove_cols_first(self):
+        # first remove cols
+        cols = [
+            k for k, x in enumerate(self.mask_.mean(axis=0)) if x <= self.f1
+        ]
+        rows = [
+            k for k, x in enumerate(self.mask_[:, cols].mean(axis=1))
+            if x <= self.f0
+        ]
+        self.rows_, self.cols_ = rows, cols
+        return self
+
+    def _fit_remove_rows_first(self):
+        # first remove rows
+        rows = [
+            k for k, x in enumerate(self.mask_.mean(axis=1)) if x <= self.f0
+        ]
+        cols = [
+            k for k, x in enumerate(self.mask_[rows].mean(axis=0))
+            if x <= self.f1
+        ]
+        self.rows_, self.cols_ = rows, cols
+        return self
 
     def fit(self, X, y=None):
         """Compute the subset of valid rows and columns.
@@ -123,29 +148,10 @@ class Cleaner(BaseEstimator, TransformerMixin):
             self.mask_ = self.mask(X, self.condition)
 
         # check axis in {0,1}
-        if self.axis.is_integer():
-            if self.axis == 1:
-                # first remove cols
-                cols = [
-                    k for k, x in enumerate(self.mask_.mean(axis=0))
-                    if x <= self.f1
-                ]
-                rows = [
-                    k for k, x in enumerate(self.mask_[:, cols].mean(axis=1))
-                    if x <= self.f0
-                ]
-            elif self.axis == 0:
-                # first remove rows
-                rows = [
-                    k for k, x in enumerate(self.mask_.mean(axis=1))
-                    if x <= self.f0
-                ]
-                cols = [
-                    k for k, x in enumerate(self.mask_[rows].mean(axis=0))
-                    if x <= self.f1
-                ]
-            self.rows_, self.cols_ = rows, cols
-            return self
+        if self.axis == 1:
+            return self._fit_remove_cols_first()
+        elif self.axis == 0:
+            return self._fit_remove_rows_first()
 
         n1, p1 = n, p  # # of filtered rows and columns
         self.col_ninvalid = self.mask_.sum(axis=0)  # p-dimensional (columns)
