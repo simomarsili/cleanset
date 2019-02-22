@@ -167,11 +167,10 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
         self.col_ninvalid = self.mask_.sum(axis=0)  # p-dimensional (columns)
         self.row_ninvalid = self.mask_.sum(axis=1)  # n-dimensional (rows)
-        row_convergence = False
-        col_convergence = False
         while 1:
             n1 = len(self.rows)
             p1 = len(self.cols)
+
             # index of the row with the largest number of invalid entries
             r = numpy.argmax(self.row_ninvalid)
             # index of the column with the largest number of invalid entries
@@ -186,14 +185,13 @@ class Cleaner(BaseEstimator, TransformerMixin):
             col_fraction = self.axis * (nc / n1)
 
             if nr <= p1 * self.f0:
-                row_convergence = True
                 row_fraction = -1
             if nc <= n1 * self.f1:
-                col_convergence = True
                 col_fraction = -1
 
-            if row_convergence and col_convergence:
+            if row_fraction == -1 and col_fraction == -1:
                 return self
+
             if col_fraction / self.f1 > row_fraction / self.f0:
                 self._remove_column(c)
             else:
