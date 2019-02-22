@@ -38,10 +38,8 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
     Parameters
     ----------
-    f0 : float
-        Target fraction of invalid entries for rows.
-    f1 : float
-        Target fraction of invalid entries for columns.
+    fna : float or tuple
+        Target fraction(s) of invalid entries for rows/columns.
     condition : callable or array
         If callable, condition(x) is True if x is an invalid value.
         If a 2D array, a boolean mask for invalid entries with shape
@@ -55,7 +53,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
 
     """
 
-    def __init__(self, f0, f1, *, condition='isna', axis=0.5):
+    def __init__(self, fna=(0.1, 0.1), *, condition='isna', axis=0.5):
         self.mask_ = None
         self.rows_ = None
         self.cols_ = None
@@ -82,6 +80,11 @@ class Cleaner(BaseEstimator, TransformerMixin):
                 self.mask_ = condition
         else:
             raise InvalidEntriesDefinitionError(condition)
+
+        try:
+            f0, f1 = fna
+        except TypeError:
+            f0 = f1 = fna
         if f0 is None or (not 0 < f0 < 1):
             raise InvalidTargetFractionError
         if f1 is None or (not 0 < f1 < 1):
@@ -195,7 +198,8 @@ class Cleaner(BaseEstimator, TransformerMixin):
             raise NotFittedError
 
 
-def clean(X, f0, f1, *, condition='isna', axis=0.5, return_clean_data=False):
+def clean(X, fna=(0.1, 0.1), *, condition='isna', axis=0.5,
+          return_clean_data=False):
     """
     Clean data from invalid entries.
 
@@ -203,10 +207,8 @@ def clean(X, f0, f1, *, condition='isna', axis=0.5, return_clean_data=False):
     ----------
     X : dataframe or array-like, shape [n_samples, n_features]
         The data used to compute the valid rows and columns.
-    f0 : float
-        Target fraction of invalid entries for rows.
-    f1 : float
-        Target fraction of invalid entries for columns.
+    fna : tuple
+        Target fractions of invalid entries for rows/columns.
     condition : callable or array
         If callable, condition(x) is True if x is an invalid value.
         If a 2D array, a boolean mask for invalid entries with shape
@@ -228,7 +230,7 @@ def clean(X, f0, f1, *, condition='isna', axis=0.5, return_clean_data=False):
         If return_clean_data is True: return (rows, columns, filtered_data)
 
     """
-    cleaner = Cleaner(f0=f0, f1=f1, condition=condition, axis=axis)
+    cleaner = Cleaner(fna=fna, condition=condition, axis=axis)
     cleaner.fit(X)
     if return_clean_data:
         return cleaner.rows_, cleaner.cols_, cleaner.transform(X)

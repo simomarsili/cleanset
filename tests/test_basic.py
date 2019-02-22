@@ -28,7 +28,7 @@ def test_cleaner(data):
     from cleanset import Cleaner
     df = data['df']
     thr = 0.1
-    cleaner = Cleaner(f0=thr, f1=thr, axis=0.5)
+    cleaner = Cleaner(fna=thr, axis=0.5)
     assert cleaner.fit_transform(df).shape == (1868, 73)
 
 
@@ -36,5 +36,5 @@ def test_clean(data):
     from cleanset import clean
     df = data['df']
     thr = 0.1
-    rows, cols = clean(df, f0=thr, f1=thr, axis=0.5)
+    rows, cols = clean(df, fna=thr, axis=0.5)
     assert (len(rows), len(cols)) == (1868, 73)
