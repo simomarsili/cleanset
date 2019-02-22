@@ -153,12 +153,13 @@ class Cleaner(BaseEstimator, TransformerMixin):
         elif self.axis == 0:
             return self._fit_remove_rows_first()
 
-        n1, p1 = n, p  # # of filtered rows and columns
         self.col_ninvalid = self.mask_.sum(axis=0)  # p-dimensional (columns)
         self.row_ninvalid = self.mask_.sum(axis=1)  # n-dimensional (rows)
         row_convergence = False
         col_convergence = False
         while 1:
+            n1 = len(rows)
+            p1 = len(cols)
             # index of the row with the largest number of invalid entries
             r = numpy.argmax(self.row_ninvalid)
             # index of the column with the largest number of invalid entries
@@ -184,15 +185,12 @@ class Cleaner(BaseEstimator, TransformerMixin):
                 return self
             if col_fraction / self.f1 > row_fraction / self.f0:
                 # remove a column
-                p1 -= 1
                 cols.remove(c)
                 self.col_ninvalid[c] = 0
                 self.row_ninvalid -= self.mask_[:, c]
             else:
                 rset = [x for x in rows if self.row_ninvalid[x] == nr]
-                nrset = len(rset)
                 # remove all rows with the same number of invalid entries
-                n1 -= nrset
                 rows = [x for x in rows if self.row_ninvalid[x] < nr]
                 self.row_ninvalid[rset] = 0
                 self.col_ninvalid -= self.mask_[rset].sum(axis=0)
