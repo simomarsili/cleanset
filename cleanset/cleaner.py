@@ -5,15 +5,15 @@ from cleanset.base import BaseEstimator, TransformerMixin
 logger = logging.getLogger(__name__)
 
 
-class CleanerError(Exception):
+class CleansetError(Exception):
     """Base class for pcdhit exceptions."""
 
 
-class InvalidEntriesDefinitionError(CleanerError):
+class InvalidEntriesDefinitionError(CleansetError):
     """Invalid definition."""
 
 
-class InvalidTargetFractionError(CleanerError):
+class InvalidTargetFractionError(CleansetError):
     """Invalid target fraction of invalid values."""
 
     def __init__(self):
@@ -21,7 +21,7 @@ class InvalidTargetFractionError(CleanerError):
         super().__init__(message)
 
 
-class AxisError(CleanerError):
+class AxisError(CleansetError):
     """Invalid axis value."""
 
     def __init__(self):
@@ -29,7 +29,7 @@ class AxisError(CleanerError):
         super().__init__(message)
 
 
-class NotFittedError(CleanerError):
+class NotFittedError(CleansetError):
     """Istance not fitted."""
 
 
