@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
 """Contains Cleaner class and clean function."""
 
 import logging
+
 import numpy
+
 from cleanset.base import BaseEstimator, TransformerMixin
 
 logger = logging.getLogger(__name__)
@@ -35,7 +38,7 @@ class NotFittedError(CleansetError):
     """Istance not fitted."""
 
 
-class Cleaner(BaseEstimator, TransformerMixin):
+class Cleaner(BaseEstimator, TransformerMixin):  # pylint: disable=too-many-instance-attributes
     """Cleaner class.
 
     Parameters
@@ -66,7 +69,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
                 import pandas
             except ImportError:
                 # use numpy
-                def condition(x):
+                def condition(x):  # pylint: disable=function-redefined
                     try:
                         return numpy.isnan(x)
                     except TypeError:
@@ -149,15 +152,13 @@ class Cleaner(BaseEstimator, TransformerMixin):
         self.row_ninvalid[rset] = 0
         self.col_ninvalid -= self.mask_[rset].sum(axis=0)
 
-    def fit(self, X, y=None):
+    def fit(self, X):  # pylint: disable=too-many-locals
         """Compute a subset of rows and columns.
 
         Parameters
         ----------
         X : dataframe or array-like, shape [n_samples, n_features]
             The data used to compute the valid rows and columns.
-        y
-            Ignored
         """
 
         f0, f1 = self.fna
@@ -172,7 +173,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
         # check axis in {0,1}
         if self.axis == 1:
             return self._fit_remove_cols_first()
-        elif self.axis == 0:
+        if self.axis == 0:
             return self._fit_remove_rows_first()
 
         self.col_ninvalid = self.mask_.sum(axis=0)  # p-dimensional (columns)
@@ -213,6 +214,7 @@ class Cleaner(BaseEstimator, TransformerMixin):
                 self._remove_rows(r)
 
     def transform(self, X):
+        """Returns the filtered data."""
         if self.rows_ is not None:
             try:
                 return X.iloc[:, self.cols_].iloc[self.rows_]
@@ -222,7 +224,11 @@ class Cleaner(BaseEstimator, TransformerMixin):
             raise NotFittedError
 
 
-def clean(X, fna=(0.1, 0.1), *, condition='isna', axis=0.5,
+def clean(X,
+          fna=(0.1, 0.1),
+          *,
+          condition='isna',
+          axis=0.5,
           return_clean_data=False):
     """
     Clean data from invalid entries.
@@ -256,7 +262,8 @@ def clean(X, fna=(0.1, 0.1), *, condition='isna', axis=0.5,
     """
     cleaner = Cleaner(fna=fna, condition=condition, axis=axis)
     cleaner.fit(X)
+
     if return_clean_data:
         return cleaner.rows_, cleaner.cols_, cleaner.transform(X)
-    else:
-        return cleaner.rows_, cleaner.cols_
+
+    return cleaner.rows_, cleaner.cols_
