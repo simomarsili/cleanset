@@ -30,17 +30,19 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 # DAMAGE.
+"""Base estimator class from sklearn."""
 
+from collections import defaultdict  # pylint: disable=wrong-import-order
 
 import numpy
+
 try:
     from inspect import signature  # pylint: disable=wrong-import-order
 except ImportError:
     from cleanset.funcsigs import signature
-from collections import defaultdict  # pylint: disable=wrong-import-order
 
 
-class BaseEstimator(object):
+class BaseEstimator:
     """Base class for estimators from sklearn.
 
     The class is consistent with sklearn estimator API:
@@ -85,12 +87,12 @@ class BaseEstimator(object):
         ]
         for p in parameters:
             if p.kind == p.VAR_POSITIONAL:
-                raise RuntimeError(
-                    "scikit-learn estimators should always "
-                    "specify their parameters in the signature"
-                    " of their __init__ (no varargs)."
-                    " %s with constructor %s doesn't "
-                    " follow this convention." % (cls, init_signature))
+                raise RuntimeError('scikit-learn estimators should always '
+                                   'specify their parameters in the signature'
+                                   ' of their __init__ (no varargs).'
+                                   " %s with constructor %s doesn't "
+                                   ' follow this convention.' %
+                                   (cls, init_signature))
         # Extract and sort argument names excluding 'self'
         return sorted([p.name for p in parameters])
 
@@ -134,10 +136,10 @@ class BaseEstimator(object):
         for key, value in params.items():
             key, delim, sub_key = key.partition('__')
             if key not in valid_params:
-                raise ValueError(
-                    'Invalid parameter %s for estimator %s. '
-                    'Check the list of available parameters '
-                    'with `estimator.get_params().keys()`.' % (key, self))
+                raise ValueError('Invalid parameter %s for estimator %s. '
+                                 'Check the list of available parameters '
+                                 'with `estimator.get_params().keys()`.' %
+                                 (key, self))
 
             if delim:
                 nested_params[key][sub_key] = value
@@ -174,7 +176,7 @@ class BaseEstimator(object):
             self.__dict__.update(state)
 
 
-class TransformerMixin(object):
+class TransformerMixin:  # pylint: disable=too-few-public-methods
     """Mixin class for all transformers in scikit-learn."""
 
     def fit_transform(self, X, y=None, **fit_params):
@@ -197,9 +199,9 @@ class TransformerMixin(object):
         if y is None:
             # fit method of arity 1 (unsupervised transformation)
             return self.fit(X, **fit_params).transform(X)
-        else:
-            # fit method of arity 2 (supervised transformation)
-            return self.fit(X, y, **fit_params).transform(X)
+
+        # fit method of arity 2 (supervised transformation)
+        return self.fit(X, y, **fit_params).transform(X)
 
 
 def _pprint(params, offset=0, printer=repr):
