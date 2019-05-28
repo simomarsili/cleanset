@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+"""Setup."""
 from os import path
+
 from setuptools import setup
+
 # from setuptools import find_packages
 
 NAME = 'cleanset'
@@ -26,7 +29,7 @@ def get_version(source):
         return version_data['version']
     except KeyError:
         # no version number in version.json
-        raise KeyError("check version file: no version number")
+        raise KeyError('check version file: no version number')
 
 
 def get_long_description(here):
@@ -62,6 +65,7 @@ setup(
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
