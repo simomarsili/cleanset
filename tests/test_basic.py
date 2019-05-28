@@ -1,38 +1,40 @@
+# -*- coding: utf-8 -*-
+"""Test module."""
+# pylint: disable=redefined-outer-name
+import os
+
 import pytest
 
 
-def get_tests_dir():
-    """Return None is no tests dir."""
-    import os
+def tests_dir():
+    """Return None if no tests dir."""
     cwd = os.getcwd()
     basename = os.path.basename(cwd)
     if basename == 'tests':
         return cwd
-    else:
-        tests_dir = os.path.join(cwd, 'tests')
-        if os.path.exists(tests_dir):
-            return tests_dir
+    tdir = os.path.join(cwd, 'tests')
+    if os.path.exists(tdir):
+        return tdir
+    return None
 
 
 @pytest.fixture()
 def data():
-    import os
+    """Dataframe fixture."""
     import pandas
     data_file = 'nfl.csv.bz2'
-    source = os.path.join(get_tests_dir(), data_file)
+    source = os.path.join(tests_dir(), data_file)
     df = pandas.read_csv(source)
     yield {'df': df}
 
 
-prms = [
-    (0., 0.2, (438, 83)),
-    (0.2, 0.1, (820, 82)),
-    (0.5, 0.1, (1868, 73)),
-    (1., 0.1, (1869, 72))]
+prms = [(0., 0.2, (438, 83)), (0.2, 0.1, (820, 82)), (0.5, 0.1, (1868, 73)),
+        (1., 0.1, (1869, 72))]
 
 
 @pytest.mark.parametrize('axis, thr, expected', prms)
 def test_cleaner(data, axis, thr, expected):
+    """Test Cleaner instance."""
     from cleanset import Cleaner
     df = data['df']
     cleaner = Cleaner(fna=thr, axis=axis)
@@ -41,6 +43,7 @@ def test_cleaner(data, axis, thr, expected):
 
 @pytest.mark.parametrize('axis, thr, expected', prms)
 def test_clean(data, axis, thr, expected):
+    """Test clean function."""
     from cleanset import clean
     df = data['df']
     rows, cols = clean(df, fna=thr, axis=axis)
